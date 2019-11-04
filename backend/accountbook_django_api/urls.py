@@ -19,6 +19,7 @@ from accountbook.views import LoginView, LogoutView, CheckLoginView
 
 urlpatterns = [
     path('accountbook/api/', include('accountbook.urls')),
+    path('accountbook/api/auth/', include('rest_framework.urls')),
     path('accountbook/api/admin/', admin.site.urls),
     path('accountbook/api/login/', LoginView.as_view(), name='login'),
     path('accountbook/api/logout/', LogoutView.as_view(), name='logout'),

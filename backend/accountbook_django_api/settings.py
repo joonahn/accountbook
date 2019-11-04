@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework_swagger',
     'corsheaders',
     'accountbook.apps.AccountbookConfig',
+    'mptt',
 ]
 
 MIDDLEWARE = [
@@ -135,3 +136,11 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     )
 }
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ORIGIN_WHITELIST = (
+    # 'www.anothersite.com'
+)
+

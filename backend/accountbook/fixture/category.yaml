@@ -1,0 +1,5 @@
+- model: accountbook.Category
+  pk: 1
+  fields:
+    parent:
+    name: John

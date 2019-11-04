@@ -1,6 +1,4 @@
-from accountbook.models import AccountBookData
-from accountbook.serializers import AccountBookDataSerializer, UserSerializer
-from accountbook.permissions import IsOwner
+from datetime import datetime
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.shortcuts import render
@@ -14,7 +12,9 @@ from rest_framework.parsers import JSONParser
 from rest_framework.reverse import reverse
 from rest_framework import status
 from rest_framework.decorators import action, api_view
-from datetime import datetime
+from .models import AccountBookData, Account, Category
+from .serializers import AccountBookDataSerializer, AccountSerializer, UserSerializer, CategorySerializer
+from .permissions import IsOwner
 
 
 @api_view(['GET'])
@@ -83,25 +83,45 @@ class AccountBookDataViewSet(viewsets.ModelViewSet):
     @action(methods=['GET'], detail=False)
     def search(self, request):
         filter_dict = {'owner': self.request.user}
+        
+        if request.query_params.get('account'):
+            filter_dict['account'] = int(request.query_params.get('account'))
+
         if request.query_params.get('date_str'):
             target_date = datetime.strptime(
                 request.query_params.get('date_str'), "%Y-%m-%d").date()
-            filter_dict['plan_date'] = target_date
-
-        if request.query_params.get('plan_type'):
-            plan_type = request.query_params.get('plan_type')
-            filter_dict['plan_type'] = plan_type
+            filter_dict['account_date'] = target_date
 
         if request.query_params.get('date_from') and request.query_params.get('date_to'):
             date_from = datetime.strptime(
                 request.query_params.get('date_from'), "%Y-%m-%d").date()
             date_to = datetime.strptime(
                 request.query_params.get('date_to'), "%Y-%m-%d").date()
-            filter_dict['plan_date__range'] = [date_from, date_to]
+            filter_dict['account_date__range'] = [date_from, date_to]
 
         if not filter_dict:
-            plans = AccountBookData.objects.none()
+            abd = AccountBookData.objects.none()
         else:
-            plans = AccountBookData.objects.filter(**filter_dict)
-        serializer = self.get_serializer(plans, many=True)
+            abd = AccountBookData.objects.filter(**filter_dict)
+        serializer = self.get_serializer(abd, many=True)
         return Response(serializer.data)
+
+
+class AccountViewSet(viewsets.ModelViewSet):
+    serializer_class = AccountSerializer
+    permission_classes = (IsOwner, permissions.IsAuthenticated)
+    authentication_classes = (CsrfExemptSessionAuthentication,)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    def get_queryset(self):
+        try:
+            return Account.objects.all().filter(owner=self.request.user)
+        except TypeError:
+            raise PermissionDenied()
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
